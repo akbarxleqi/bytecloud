@@ -40,7 +40,8 @@
         previewOpen: false, 
         previewUrl: '', 
         previewName: '',
-        previewType: ''
+        previewType: '',
+        uploadFolderId: 0
       }" 
       @open-preview.window="
         previewUrl = $event.detail.url; 
@@ -180,7 +181,7 @@
 <x-modal name="upload-file" title="Upload File">
     <form action="{{ route('drive.files.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        <input type="hidden" name="folder_id" value="{{ request('folder_id') }}">
+        <input type="hidden" name="folder_id" x-bind:value="uploadFolderId || ''">
         <div class="mb-6">
             <label class="block text-sm font-semibold text-slateText mb-2">Select File</label>
             <div class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-line bg-soft p-10 transition hover:border-primary group">

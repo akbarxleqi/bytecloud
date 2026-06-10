@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::query()->updateOrCreate([
-            'email' => env('ADMIN_EMAIL', 'admin@bytecloud.test'),
+            'email' => env('ADMIN_EMAIL', 'akbardev47@gmail.com'),
         ], [
             'name' => 'Bytecloud Admin',
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),

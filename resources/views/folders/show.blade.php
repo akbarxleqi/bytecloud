@@ -18,7 +18,7 @@
                     <span class="material-symbols-outlined text-[18px]">add_box</span>
                     New Folder
                 </button>
-                <button @click="$dispatch('open-modal', 'upload-file')" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-lift hover:opacity-90 transition">
+                <button @click="uploadFolderId = {{ $folder->id }}; $dispatch('open-modal', 'upload-file')" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-lift hover:opacity-90 transition">
                     <span class="material-symbols-outlined text-[18px]">cloud_upload</span>
                     Upload File
                 </button>

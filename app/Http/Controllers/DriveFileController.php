@@ -43,17 +43,26 @@ class DriveFileController extends Controller
         $sizeBytes = $uploadedFile->getSize();
 
         $path = $uploadedFile->store(config('drive.tmp_path'), config('drive.tmp_disk'));
+        \Illuminate\Support\Facades\Log::debug('Upload store result', [
+            'path' => $path,
+            'tmp_disk' => config('drive.tmp_disk'),
+            'tmp_path' => config('drive.tmp_path'),
+            'upload_error' => $uploadedFile->getError(),
+            'upload_error_msg' => $uploadedFile->getErrorMessage(),
+            'orig_name' => $originalName,
+            'size' => $sizeBytes,
+        ]);
         $account = \App\Models\TelegramAccount::first();
 
         $file = DriveFile::create([
             'folder_id' => $request->folder_id,
             'telegram_account_id' => $account?->id,
             'original_name' => $originalName,
-            'stored_name' => basename($path),
+            'stored_name' => $path ? basename($path) : '',
             'extension' => $extension,
             'mime_type' => $mimeType,
             'size_bytes' => $sizeBytes,
-            'tmp_path' => $path,
+            'tmp_path' => $path ?: null,
             'status' => 'pending',
         ]);
 

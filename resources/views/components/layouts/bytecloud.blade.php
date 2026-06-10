@@ -123,6 +123,14 @@
                 {{ $label }}
             </a>
         @endforeach
+
+        <form action="{{ route('logout') }}" method="POST" class="mt-2">
+            @csrf
+            <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 hover:text-red-700 transition">
+                <span class="material-symbols-outlined text-[20px]">logout</span>
+                Sign Out
+            </button>
+        </form>
     </nav>
     <div class="px-6">
         <div class="rounded-2xl border border-line bg-soft p-4 shadow-sm">

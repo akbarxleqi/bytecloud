@@ -9,9 +9,12 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalFiles = DriveFile::where('status', 'uploaded')->count();
-        $totalSize = DriveFile::where('status', 'uploaded')->sum('size_bytes');
-        $activeUploads = DriveFile::whereIn('status', ['pending', 'uploading'])->count();
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
+        $totalFiles = $accountId ? DriveFile::where('telegram_account_id', $accountId)->where('status', 'uploaded')->count() : 0;
+        $totalSize = $accountId ? DriveFile::where('telegram_account_id', $accountId)->where('status', 'uploaded')->sum('size_bytes') : 0;
+        $activeUploads = $accountId ? DriveFile::where('telegram_account_id', $accountId)->whereIn('status', ['pending', 'uploading'])->count() : 0;
 
         $stats = [
             [
@@ -34,7 +37,8 @@ class DashboardController extends Controller
             ],
         ];
 
-        $recentFiles = DriveFile::with('folder')
+        $recentFiles = $accountId ? DriveFile::with('folder')
+            ->where('telegram_account_id', $accountId)
             ->where('status', 'uploaded')
             ->latest()
             ->limit(5)
@@ -50,7 +54,7 @@ class DashboardController extends Controller
                     'status' => $file->status,
                     'icon' => $this->getFileIcon($file->mime_type),
                 ];
-            });
+            }) : collect();
 
         return view('dashboard', [
             'stats' => $stats,

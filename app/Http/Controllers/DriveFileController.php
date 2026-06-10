@@ -21,9 +21,17 @@ class DriveFileController extends Controller
             'parent_id' => 'nullable|exists:drive_folders,id',
         ]);
 
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
+        if ($request->parent_id) {
+            $parent = DriveFolder::where('telegram_account_id', $accountId)->findOrFail($request->parent_id);
+        }
+
         DriveFolder::create([
             'name' => $request->name,
             'parent_id' => $request->parent_id,
+            'telegram_account_id' => $accountId,
         ]);
 
         return back()->with('status', 'Folder created successfully.');
@@ -52,7 +60,12 @@ class DriveFileController extends Controller
             'orig_name' => $originalName,
             'size' => $sizeBytes,
         ]);
-        $account = \App\Models\TelegramAccount::first();
+        $user = auth()->user();
+        $account = $user->telegramAccount;
+
+        if ($request->folder_id) {
+            $folder = DriveFolder::where('telegram_account_id', $account?->id)->findOrFail($request->folder_id);
+        }
 
         $file = DriveFile::create([
             'folder_id' => $request->folder_id,
@@ -73,7 +86,11 @@ class DriveFileController extends Controller
 
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
         $files = DriveFile::with('folder')
+            ->where('telegram_account_id', $accountId)
             ->when($request->search, function ($query, $search) {
                 $query->where('original_name', 'like', "%{$search}%");
             })
@@ -99,7 +116,11 @@ class DriveFileController extends Controller
 
     public function queue()
     {
-        $uploads = DriveFile::whereIn('status', ['pending', 'uploading', 'failed'])
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
+        $uploads = DriveFile::where('telegram_account_id', $accountId)
+            ->whereIn('status', ['pending', 'uploading', 'failed'])
             ->latest()
             ->get()
             ->map(function ($file) {
@@ -122,16 +143,19 @@ class DriveFileController extends Controller
 
     public function download(DriveFile $file, DriveDownloadService $downloadService)
     {
+        abort_unless($file->telegram_account_id === auth()->user()->telegramAccount?->id, 403);
         return $downloadService->stream($file);
     }
 
     public function preview(DriveFile $file, DriveDownloadService $downloadService)
     {
+        abort_unless($file->telegram_account_id === auth()->user()->telegramAccount?->id, 403);
         return $downloadService->stream($file);
     }
 
     public function retry(DriveFile $file): RedirectResponse
     {
+        abort_unless($file->telegram_account_id === auth()->user()->telegramAccount?->id, 403);
         abort_unless($file->status === 'failed', 409);
 
         $file->update(['status' => 'pending', 'error_message' => null]);
@@ -142,6 +166,7 @@ class DriveFileController extends Controller
 
     public function destroy(DriveFile $file): RedirectResponse
     {
+        abort_unless($file->telegram_account_id === auth()->user()->telegramAccount?->id, 403);
         if ($file->tmp_path) {
             Storage::disk(config('drive.tmp_disk'))->delete($file->tmp_path);
         }
@@ -153,7 +178,11 @@ class DriveFileController extends Controller
 
     public function clearQueue(): RedirectResponse
     {
-        $files = DriveFile::whereIn('status', ['uploaded', 'failed'])->get();
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
+        $files = DriveFile::where('telegram_account_id', $accountId)
+            ->whereIn('status', ['uploaded', 'failed'])->get();
 
         foreach ($files as $file) {
             if ($file->tmp_path) {

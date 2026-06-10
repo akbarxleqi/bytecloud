@@ -12,6 +12,7 @@ class TelegramAccount extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'name',
         'api_id',
         'api_hash',
@@ -40,6 +41,11 @@ class TelegramAccount extends Model
             get: fn (?string $value) => $value ? decrypt($value) : null,
             set: fn (?string $value) => $value ? encrypt($value) : null,
         );
+    }
+
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function files(): HasMany

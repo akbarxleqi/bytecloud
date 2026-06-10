@@ -11,7 +11,7 @@ class TelegramConnectController extends Controller
 {
     public function show()
     {
-        $account = TelegramAccount::first();
+        $account = auth()->user()->telegramAccount;
         
         if ($account?->is_connected) {
             return redirect()->route('dashboard');
@@ -28,9 +28,11 @@ class TelegramConnectController extends Controller
             'phone' => 'required|string',
         ]);
 
-        $account = TelegramAccount::first() ?? new TelegramAccount();
+        $user = auth()->user();
+        $account = $user->telegramAccount ?? new TelegramAccount();
 
         $account->fill([
+            'user_id' => $user->id,
             'api_id' => $request->api_id,
             'api_hash' => $request->api_hash,
             'phone_number' => $request->phone,
@@ -58,7 +60,7 @@ class TelegramConnectController extends Controller
     public function verifyCode(Request $request, TelegramAuthService $authService)
     {
         $request->validate(['code' => 'required|string']);
-        $account = TelegramAccount::firstOrFail();
+        $account = auth()->user()->telegramAccount ?: abort(404);
 
         try {
             $authService->submitCode($account, $request->code);
@@ -87,7 +89,7 @@ class TelegramConnectController extends Controller
     public function verifyPassword(Request $request, TelegramAuthService $authService)
     {
         $request->validate(['password' => 'required|string']);
-        $account = TelegramAccount::firstOrFail();
+        $account = auth()->user()->telegramAccount ?: abort(404);
 
         try {
             $authService->submitPassword($account, $request->password);

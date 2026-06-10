@@ -16,7 +16,12 @@ class EnsureTelegramConnected
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $account = TelegramAccount::first();
+        $user = auth()->user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $account = $user->telegramAccount;
 
         if (! $account || ! $account->is_connected) {
             return redirect()->route('telegram.show');

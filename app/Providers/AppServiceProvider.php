@@ -20,11 +20,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \Illuminate\Support\Facades\View::composer('components.layouts.bytecloud', function ($view) {
-            $totalSize = \App\Models\DriveFile::where('status', 'uploaded')->sum('size_bytes');
+            $user = auth()->user();
+            $account = $user ? $user->telegramAccount : null;
+            $accountId = $account?->id;
+
+            $totalSize = $accountId ? \App\Models\DriveFile::where('telegram_account_id', $accountId)->where('status', 'uploaded')->sum('size_bytes') : 0;
             $maxSize = 214748364800; // 200 GB placeholder
             $percentage = $maxSize > 0 ? round(($totalSize / $maxSize) * 100) : 0;
-
-            $account = \App\Models\TelegramAccount::first();
 
             $view->with([
                 'storageUsed' => $this->formatBytes($totalSize),

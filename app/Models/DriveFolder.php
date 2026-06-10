@@ -14,6 +14,7 @@ class DriveFolder extends Model
 
     protected $fillable = [
         'parent_id',
+        'telegram_account_id',
         'name',
         'slug',
         'path',
@@ -30,6 +31,11 @@ class DriveFolder extends Model
             $parentPath = $folder->parent?->path;
             $folder->path = trim(($parentPath ? $parentPath.'/' : '').$folder->slug, '/');
         });
+    }
+
+    public function telegramAccount(): BelongsTo
+    {
+        return $this->belongsTo(TelegramAccount::class);
     }
 
     public function parent(): BelongsTo

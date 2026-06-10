@@ -10,7 +10,13 @@ class DriveFolderController extends Controller
 {
     public function index(Request $request)
     {
-        $folders = DriveFolder::withCount('files')
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
+        $folders = $accountId ? DriveFolder::where('telegram_account_id', $accountId)
+            ->withCount(['files' => function ($query) use ($accountId) {
+                $query->where('telegram_account_id', $accountId);
+            }])
             ->whereNull('parent_id')
             ->get()
             ->map(function ($folder) {
@@ -18,10 +24,10 @@ class DriveFolderController extends Controller
                     'id' => $folder->id,
                     'name' => $folder->name,
                     'items' => $folder->files_count,
-                    'size' => $this->formatBytes($folder->files()->sum('size_bytes')),
+                    'size' => $this->formatBytes($folder->files()->where('telegram_account_id', $folder->telegram_account_id)->sum('size_bytes')),
                     'icon' => 'folder',
                 ];
-            });
+            }) : collect();
 
         return view('folders.index', [
             'folders' => $folders,
@@ -30,6 +36,11 @@ class DriveFolderController extends Controller
 
     public function show(DriveFolder $folder, Request $request)
     {
+        $user = auth()->user();
+        $accountId = $user->telegramAccount?->id;
+
+        abort_unless($folder->telegram_account_id === $accountId, 403);
+
         $breadcrumbs = [];
         $temp = $folder;
         while ($temp) {
@@ -37,7 +48,10 @@ class DriveFolderController extends Controller
             $temp = $temp->parent;
         }
 
-        $folders = DriveFolder::withCount('files')
+        $folders = DriveFolder::where('telegram_account_id', $accountId)
+            ->withCount(['files' => function ($query) use ($accountId) {
+                $query->where('telegram_account_id', $accountId);
+            }])
             ->where('parent_id', $folder->id)
             ->get()
             ->map(function ($f) {
@@ -45,12 +59,13 @@ class DriveFolderController extends Controller
                     'id' => $f->id,
                     'name' => $f->name,
                     'items' => $f->files_count,
-                    'size' => $this->formatBytes($f->files()->sum('size_bytes')),
+                    'size' => $this->formatBytes($f->files()->where('telegram_account_id', $f->telegram_account_id)->sum('size_bytes')),
                     'icon' => 'folder',
                 ];
             });
 
         $files = DriveFile::with('folder')
+            ->where('telegram_account_id', $accountId)
             ->where('folder_id', $folder->id)
             ->when($request->search, function ($query, $search) {
                 $query->where('original_name', 'like', "%{$search}%");
